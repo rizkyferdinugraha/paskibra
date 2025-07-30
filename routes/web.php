@@ -12,6 +12,10 @@ Route::get('/dashboard', [BiodataController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+Route::get('/template/kta', [BiodataController::class, 'indexKTA'])
+    ->middleware(['auth', 'verified'])
+    ->name('template.kta');
+
 Route::post('/biodata', [BiodataController::class, 'store'])
     ->middleware(['auth', 'verified'])
     ->name('biodata.store');

@@ -41,6 +41,29 @@ class BiodataController extends Controller
             ->with('jurusans', $jurusans);
     }
 
+    public function indexKTA()
+    {
+        //
+        $userId = Auth::id();
+        $biodata = Biodata::where('user_id', $userId)->first();
+        $jurusans = Jurusan::all();
+
+        if ($biodata) {
+            $jurusanId = $biodata->jurusan_id;
+            $namaJurusan = Jurusan::find($jurusanId)->nama_jurusan;
+
+            if (!$biodata->is_active) {
+                return view('template.kta')
+                    ->with('biodata', $biodata)
+                    ->with('jurusan', $namaJurusan);
+            } else {
+                return view('template.kta')
+                    ->with('jurusan', $namaJurusan)
+                    ->with('biodata', $biodata);
+            }
+        }
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -66,8 +89,6 @@ class BiodataController extends Controller
             'riwayat_penyakit' => 'required|string|max:255',
             'pas_foto' => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
-
-        // dd($data);
 
         $data['user_id'] = Auth::id();
         $data['is_active'] = false;

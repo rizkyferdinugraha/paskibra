@@ -169,7 +169,7 @@
                                             aria-labelledby="headingOne" data-bs-parent="#accordionExample">
                                             <div class="accordion-body">
                                                 <div class="row">
-                                                    <div class="col-4">
+                                                    <div class="col-6">
                                                         <div class="card">
                                                             <div class="card-content">
                                                                 <div class="card-body">
@@ -254,8 +254,24 @@
                                         <div id="collapseTwo" class="accordion-collapse collapse"
                                             aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
                                             <div class="accordion-body">
-                                                <iframe src="{{ asset('pdf_file/paskibra_info.pdf') }}" frameborder="0" allowfullscreen style="width: 100%; height: 800px;"></iframe>
+                                                <iframe src="{{ asset('pdf_file/paskibra_info.pdf') }}"
+                                                    frameborder="0" allowfullscreen
+                                                    style="width: 100%; height: 800px;"></iframe>
                                             </div>
+                                        </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="headingThree">
+                                            <button class="accordion-button collapsed" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#collapseThree"
+                                                aria-expanded="false" aria-controls="collapseThree">
+                                                Kartu tanda anggota
+                                            </button>
+                                        </h2>
+                                        <div id="collapseThree" class="accordion-collapse collapse"
+                                            aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+                                            <iframe src="{{ route('template.kta') }}" frameborder="0" allowfullscreen
+                                                style="width: 100%; height: 400px;"></iframe>
                                         </div>
                                     </div>
                                 </div>

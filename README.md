@@ -29,7 +29,7 @@ Proyek ini dibangun menggunakan framework [Laravel](https://laravel.com) dengan 
 
 1.  **Clone repositori ini:**
     ```bash
-    git clone [URL_REPOSITORI_ANDA]
+    git clone https://github.com/rizkyferdinugraha/paskibra.git
     cd paskibra
     ```
 

@@ -3,12 +3,9 @@
         <div class="sidebar-header position-relative">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="logo">
-                    <a href="index.html"
-                        ><img
-                            src="{{ asset('mazer/assets/compiled/svg/logo.svg') }}"
-                            alt="Logo"
-                            srcset=""
-                    /></a>
+                    <a href="{{ route('dashboard') }}" class="d-flex align-items-center text-decoration-none">
+                        PASKIBRA
+                    </a>
                 </div>
                 <div class="theme-toggle d-flex gap-2 align-items-center mt-2">
                     <svg
@@ -85,6 +82,14 @@
                         <span>Dashboard</span>
                     </a>
                 </li>
+
+                <li class="sidebar-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
+                    <a href="{{ route('profile.edit') }}" class="sidebar-link">
+                        <i class="bi bi-person-fill"></i>
+                        <span>Profile</span>
+                    </a>
+                </li>
+
                 <li class="sidebar-item">
                     <a href="{{ route('logout') }}" class="sidebar-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                         <i class="bi bi-box-arrow-right"></i>

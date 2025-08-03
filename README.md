@@ -6,17 +6,31 @@
 
 ## Tentang Proyek
 
-Aplikasi ini adalah sistem informasi berbasis web yang dibangun untuk mengelola proses pendaftaran anggota baru Paskibra. Sistem ini memudahkan calon anggota untuk mendaftar secara online dan bagi admin untuk memverifikasi dan mengelola data pendaftar.
+Aplikasi ini adalah sistem informasi berbasis web yang dibangun untuk mengelola proses pendaftaran anggota baru Paskibra. Sistem ini dirancang untuk memudahkan calon anggota dalam melakukan pendaftaran secara online, serta membantu admin dalam memverifikasi dan mengelola data pendaftar secara efisien.
 
-Proyek ini dibangun menggunakan framework [Laravel](https://laravel.com) dengan template admin [Mazer](https://github.com/zuramai/mazer).
+Proyek ini dibangun menggunakan framework [Laravel](https://laravel.com) dan template admin [Mazer](https://github.com/zuramai/mazer).
 
 ## Fitur Utama
 
--   **Registrasi & Login Pengguna:** Calon anggota dapat membuat akun dan masuk ke sistem.
--   **Formulir Pendaftaran:** Formulir pengisian biodata lengkap, termasuk unggah pas foto.
--   **Status Pendaftaran:** Pengguna dapat melihat status pendaftaran mereka (Menunggu Verifikasi, Diterima).
--   **Panel Admin:** Halaman khusus untuk admin mengelola data pendaftar, melakukan verifikasi, dan mengubah status pendaftaran.
--   **Informasi Paskibra:** Menampilkan informasi terkait Paskibra kepada calon anggota.
+### Untuk Calon Anggota (User)
+-   **Autentikasi:** Registrasi akun baru dan login ke sistem.
+-   **Manajemen Profil:** Mengubah data profil pribadi dan password.
+-   **Formulir Pendaftaran:** Mengisi biodata lengkap yang dibutuhkan untuk seleksi.
+-   **Unggah Dokumen:** Mengunggah dokumen pendukung seperti pas foto.
+-   **Status Pendaftaran:** Memantau status pendaftaran secara real-time (Menunggu Verifikasi, Diterima, Ditolak).
+
+### Untuk Admin
+-   **Dashboard:** Menampilkan ringkasan statistik pendaftar.
+-   **Manajemen Pendaftar:** Melihat, mencari, dan mengelola seluruh data pendaftar.
+-   **Verifikasi Data:** Melakukan verifikasi kelengkapan dan keabsahan data pendaftar.
+-   **Ubah Status:** Mengubah status pendaftaran (menerima atau menolak calon anggota).
+
+## Teknologi yang Digunakan
+
+-   **Backend:** PHP 8.1+, Laravel 10.x
+-   **Frontend:** Blade, Vite, Bootstrap 5
+-   **Template Admin:** [Mazer](https://github.com/zuramai/mazer)
+-   **Database:** MySQL, PostgreSQL (atau database lain yang didukung Laravel)
 
 ## Prasyarat
 
@@ -27,55 +41,70 @@ Proyek ini dibangun menggunakan framework [Laravel](https://laravel.com) dengan 
 
 ## Panduan Instalasi
 
-1.  **Clone repositori ini:**
+1.  **Clone repositori:**
     ```bash
     git clone https://github.com/rizkyferdinugraha/paskibra.git
     cd paskibra
     ```
 
-2.  **Install dependensi PHP:**
+2.  **Install dependensi backend (PHP):**
     ```bash
     composer install
     ```
 
-3.  **Install dependensi JavaScript:**
+3.  **Install dependensi frontend (JavaScript):**
     ```bash
     npm install
     ```
 
-4.  **Buat file `.env`:**
+4.  **Build aset frontend:**
+    Untuk development, jalankan:
+    ```bash
+    npm run dev
+    ```
+    Untuk production, jalankan:
+    ```bash
+    npm run build
+    ```
+
+5.  **Buat file `.env`:**
     Salin file `.env.example` menjadi `.env`.
     ```bash
     cp .env.example .env
     ```
 
-5.  **Generate kunci aplikasi:**
+6.  **Generate kunci aplikasi:**
     ```bash
     php artisan key:generate
     ```
 
-6.  **Konfigurasi database:**
+7.  **Konfigurasi database:**
     Buka file `.env` dan sesuaikan pengaturan database Anda (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`).
 
-7.  **Jalankan migrasi database:**
+8.  **Jalankan migrasi database:**
     Perintah ini akan membuat tabel-tabel yang dibutuhkan oleh aplikasi.
     ```bash
     php artisan migrate
     ```
 
-8.  **(Opsional) Jalankan seeder untuk data awal:**
-    Jika ada, perintah ini akan mengisi tabel dengan data awal (contoh: data jurusan).
+9.  **(Opsional) Jalankan seeder untuk data awal:**
+    Perintah ini akan mengisi tabel dengan data awal (contoh: data jurusan).
     ```bash
     php artisan db:seed
     ```
+    > **Catatan:** Secara default, seeder tidak membuat akun admin. Anda dapat membuatnya melalui halaman registrasi dan mengubah role-nya di database, atau membuat seeder khusus untuk user admin.
 
-9.  **Jalankan server pengembangan:**
+10. **Jalankan server pengembangan:**
     ```bash
     php artisan serve
     ```
 
-10. **Akses aplikasi:**
+11. **Akses aplikasi:**
     Buka browser dan kunjungi `http://127.0.0.1:8000`.
+
+## Kontribusi
+
+Kontribusi untuk pengembangan proyek ini sangat diterima. Jika Anda ingin berkontribusi, silakan lakukan fork pada repositori ini, buat branch baru untuk fitur atau perbaikan Anda, dan ajukan Pull Request.
 
 ## Lisensi
 

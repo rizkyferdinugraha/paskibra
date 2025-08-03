@@ -69,7 +69,7 @@
     <div class="photo-box"><img src="{{ asset('storage/' . $biodata->pas_foto_url) }}" alt="img" width="100%" height="100px"></div>
     <div>
       <div class="text-top">{{ $biodata->no_kta }}</div>
-      <div class="text-middle">{{ $biodata->nama_lengkap }}</div>
+      <div class="text-middle">{{ Auth::user()->name }}</div>
       <div class="text-bottom">
         {{ $jurusan }}<br />
         Paskibra

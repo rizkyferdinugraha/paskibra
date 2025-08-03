@@ -35,7 +35,8 @@
                                             <div class="form-group">
                                                 <label for="nama_lengkap">Nama Lengkap</label>
                                                 <input type="text" id="nama_lengkap" class="form-control"
-                                                    placeholder="Nama Lengkap" name="nama_lengkap" required>
+                                                    placeholder="Nama Lengkap" name="nama_lengkap" value="{{ Auth::user()->name }}"
+                                                    readonly required>
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-12">
@@ -187,7 +188,7 @@
                                                             <input type="text" id="nama_lengkap"
                                                                 class="form-control" placeholder="Nama Lengkap"
                                                                 name="nama_lengkap"
-                                                                value="{{ $biodata->nama_lengkap }}" readonly disabled>
+                                                                value="{{ Auth::user()->name }}" readonly disabled>
                                                         </div>
                                                         <div class="form-group">
                                                             <label for="tanggal_lahir">Tanggal Lahir</label>

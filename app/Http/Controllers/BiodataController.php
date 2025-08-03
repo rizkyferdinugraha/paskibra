@@ -91,6 +91,7 @@ class BiodataController extends Controller
         ]);
 
         $data['user_id'] = Auth::id();
+        $data['nama_lengkap'] = '-';
         $data['is_active'] = false;
         $data['no_kta'] = $data['tahun_angkatan'] . str_pad($data['user_id'], 4, '0', STR_PAD_LEFT);
         $data['role_id'] = 6;

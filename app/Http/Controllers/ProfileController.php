@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+
 
 class ProfileController extends Controller
 {
@@ -26,16 +29,30 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        try {
+            // Update nama dan email
+            $user->fill($request->only('name', 'email'));
+
+            // Jika email diubah, reset verifikasi email
+            if ($user->isDirty('email')) {
+                $user->email_verified_at = null;
+            }
+
+            // Jika password baru diisi, update password setelah hash
+            if ($request->filled('password_baru')) {
+                $user->password = Hash::make($request->password_baru);
+            }
+
+            $user->save();
+
+            return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        } catch (\Exception $e) {
+            return Redirect::route('profile.edit')->with('error', 'Terjadi kesalahan saat memperbarui profil.');
         }
-
-        $request->user()->save();
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
+
 
     /**
      * Delete the user's account.

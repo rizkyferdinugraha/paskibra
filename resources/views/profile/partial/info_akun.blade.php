@@ -32,27 +32,27 @@
                 @method('PUT')
 
                 <div class="form-group">
-                    <label for="name">Nama</label>
+                    <label for="name">Nama <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="name" placeholder="Nama" name="name" value="{{ old('name', Auth::user()->name) }}">
                 </div>
 
                 <div class="form-group">
-                    <label for="email">Email</label>
+                    <label for="email">Email <span class="text-danger">*</span></label>
                     <input type="email" class="form-control" id="email" placeholder="Email" name="email" value="{{ old('email', Auth::user()->email) }}">
                 </div>
 
                 <div class="form-group">
-                    <label for="password_sekarang">Password Saat ini </label>
+                    <label for="password_sekarang">Password Saat ini <span class="text-danger">*</span></label>
                     <input type="password" class="form-control" id="password_sekarang" placeholder="Password Saat ini" name="password_sekarang">
                 </div>
 
                 <div class="form-group">
-                    <label for="password_baru">Password Baru </label>
+                    <label for="password_baru">Password Baru (opsional)</label>
                     <input type="password" class="form-control" id="password_baru" placeholder="Password Baru" name="password_baru">
                 </div>
 
                 <div class="form-group">
-                    <label for="password_baru_confirmation">Konfirmasi Password</label>
+                    <label for="password_baru_confirmation">Konfirmasi Password Baru (opsional)</label>
                     <input type="password" class="form-control" id="password_baru_confirmation" placeholder="Konfirmasi Password" name="password_baru_confirmation">
                 </div>
 

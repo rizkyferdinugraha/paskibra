@@ -14,10 +14,12 @@ Proyek ini dibangun menggunakan framework [Laravel](https://laravel.com) dan tem
 
 ### Untuk Calon Anggota (User)
 -   **Autentikasi:** Registrasi akun baru dan login ke sistem.
--   **Manajemen Profil:** Mengubah data profil pribadi dan password.
+-   **Manajemen Profil:** Mengubah data profil pribadi (nama, email) dan password.
 -   **Formulir Pendaftaran:** Mengisi biodata lengkap yang dibutuhkan untuk seleksi.
+-   **Update Biodata:** Memperbarui data pendaftaran yang telah dikirim (seperti alamat, no. telepon, dll).
 -   **Unggah Dokumen:** Mengunggah dokumen pendukung seperti pas foto.
 -   **Status Pendaftaran:** Memantau status pendaftaran secara real-time (Menunggu Verifikasi, Diterima, Ditolak).
+-   **Kartu Tanda Anggota (KTA):** Melihat pratinjau Kartu Tanda Anggota (KTA) setelah pendaftaran diajukan.
 
 ### Untuk Admin
 -   **Dashboard:** Menampilkan ringkasan statistik pendaftar.

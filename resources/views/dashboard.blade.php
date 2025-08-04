@@ -240,6 +240,7 @@
                                                                 rows="7" readonly disabled>{{ $biodata->riwayat_penyakit }}</textarea>
                                                         </div>
                                                     </div>
+                                                    <p class="text-center mt-3 fs-4 alert alert-info">Untuk ubah data, silahkan klik <a href="{{ route('profile.edit') }}">disini</a></p>
                                                 </div>
                                             </div>
                                         </div>

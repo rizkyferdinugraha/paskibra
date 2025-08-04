@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Controllers\BiodataController;
+use App\Models\Jurusan;
+
 
 
 class ProfileController extends Controller
@@ -19,8 +22,13 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $biodata = (new BiodataController())->getBiodataByID();
+        $jurusans = Jurusan::all();
         return view('profile.edit', [
             'user' => $request->user(),
+            'biodata' => $biodata,
+            'jurusans' => $jurusans,
+            'jurusan' => $biodata->jurusan->nama_jurusan
         ]);
     }
 

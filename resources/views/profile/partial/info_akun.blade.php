@@ -2,31 +2,6 @@
     <div class="card">
         <div class="card-body">
 
-            {{-- Notifikasi Sukses --}}
-            @if(session('status') === 'profile-updated')
-                <div class="alert alert-success">
-                    Profil Anda berhasil diperbarui
-                </div>
-            @endif
-
-            {{-- Notifikasi Error Umum --}}
-            @if(session('error'))
-                <div class="alert alert-danger">
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            {{-- Notifikasi Validasi Error --}}
-            @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul class="mb-0">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
             <form id="form-update-profile" method="POST" action="{{ route('profile.update') }}">
                 @csrf
                 @method('PUT')

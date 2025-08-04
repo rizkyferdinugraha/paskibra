@@ -20,7 +20,7 @@ Route::post('/biodata', [BiodataController::class, 'store'])
     ->middleware(['auth', 'verified'])
     ->name('biodata.store');
 
-Route::get('/profile/edit', [ProfileController::class, 'edit'], [BiodataController::class, 'showEdit'])
+Route::get('/profile/edit', [ProfileController::class, 'edit'])
     ->middleware(['auth', 'verified'])
     ->name('profile.edit');
 

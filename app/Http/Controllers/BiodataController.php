@@ -17,6 +17,19 @@ class BiodataController extends Controller
     {
         $biodata = Biodata::with('jurusan')->where('user_id', Auth::id())->first();
 
+        // Cek riwayat terakhir: jika dinonaktifkan, blok form pendaftaran
+        $latestLog = \App\Models\MemberStatusLog::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($latestLog && $latestLog->action === 'deactivated') {
+            return view('dashboard')
+                ->with('status', 'deactivated')
+                ->with('deactivation_reason', $latestLog->reason)
+                ->with('deactivation_admin', $latestLog->admin_name)
+                ->with('deactivation_when', $latestLog->created_at);
+        }
+
         // Jika pengguna belum mengisi biodata, tampilkan form pendaftaran.
         if (!$biodata) {
             $jurusans = Jurusan::all();
@@ -68,17 +81,39 @@ class BiodataController extends Controller
         $pasFotoUrl = $request->file('pas_foto')->store('pas_foto', 'public');
         $userId = Auth::id();
 
-        Biodata::create(array_merge(
+        // Update user dengan role_id dan super_admin
+        $user = Auth::user();
+        $user->role_id = 6; // Role untuk anggota biasa
+        $user->super_admin = false; // Default bukan super admin
+        $user->save();
+
+        $biodata = Biodata::create(array_merge(
             $validatedData,
             [
                 'user_id' => $userId,
-                'role_id' => 6, // Asumsi role_id 2 adalah untuk anggota
-                'super_admin' => false, // Asumsi super_admin adalah false untuk anggota biasa
                 'is_active' => false, // Status default menunggu verifikasi
                 'no_kta' => $validatedData['tahun_angkatan'] . str_pad($userId, 4, '0', STR_PAD_LEFT),
                 'pas_foto_url' => $pasFotoUrl,
             ]
         ));
+
+        // Log initial pending status
+        // Hindari duplikasi pending log jika user submit ulang
+        $hasPending = \App\Models\MemberStatusLog::where('user_id', $userId)
+            ->where('biodata_id', $biodata->id)
+            ->where('action', 'pending')
+            ->exists();
+
+        if (!$hasPending) {
+            \App\Models\MemberStatusLog::logAction(
+                $userId,
+                $biodata->id,
+                'pending',
+                'pending',
+                'Pendaftaran disubmit',
+                null // No admin yet
+            );
+        }
 
         return redirect()->route('dashboard')->with('success', 'Pendaftaran berhasil dikirim. Silakan tunggu konfirmasi dari admin.');
     }

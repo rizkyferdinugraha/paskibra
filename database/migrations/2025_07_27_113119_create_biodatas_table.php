@@ -18,13 +18,11 @@ return new class extends Migration
             $table->string('pas_foto_url');
             $table->string('nama_lengkap');
             $table->date('tanggal_lahir');
-            $table->foreignId('role_id')->constrained()->onDelete('cascade');
             $table->string('jenis_kelamin');
             $table->string('no_telepon');
             $table->text('alamat');
             $table->foreignId('jurusan_id')->constrained()->onDelete('cascade');
             $table->integer('tahun_angkatan');
-            $table->boolean('super_admin');
             $table->boolean('is_active');
             $table->text('riwayat_penyakit');
             $table->timestamps();

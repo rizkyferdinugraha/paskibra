@@ -13,11 +13,26 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seed roles and jurusans first
+        $this->call([
+            RoleSeeder::class,
+            JurusanSeeder::class,
+        ]);
+
         // User::factory(10)->create();
 
+        // Create Super Admin
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Super Admin',
+            'email' => 'superadmin@paskibra.com',
+            'super_admin' => true,
+            'is_admin' => true,
+            'role_id' => 1, // Super Admin Role
+        ]);
+
+        // Create biodata for super admin
+        $this->call([
+            SuperAdminBiodataSeeder::class,
         ]);
     }
 }

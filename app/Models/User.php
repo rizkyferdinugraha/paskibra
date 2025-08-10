@@ -21,6 +21,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_admin',
+        'super_admin',
+        'role_id',
     ];
 
     /**
@@ -43,6 +46,40 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
+            'super_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the role that the user belongs to.
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * Get the biodata associated with the user.
+     */
+    public function biodata()
+    {
+        return $this->hasOne(Biodata::class, 'user_id');
+    }
+
+    /**
+     * Check if user is admin.
+     */
+    public function isAdmin()
+    {
+        return $this->is_admin || $this->super_admin;
+    }
+
+    /**
+     * Check if user is super admin.
+     */
+    public function isSuperAdmin()
+    {
+        return $this->super_admin;
     }
 }

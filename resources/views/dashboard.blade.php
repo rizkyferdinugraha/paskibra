@@ -11,7 +11,34 @@
         </div>
     @endif
 
-    @if ($status == 'not_found')
+    @if (auth()->user()->isSuperAdmin() && !auth()->user()->biodata)
+        <div class="alert alert-info">
+            <h4 class="alert-heading">Super Admin</h4>
+            <p>Anda adalah Super Admin. Silahkan isi biodata terlebih dahulu untuk mengakses panel admin.</p>
+        </div>
+    @endif
+
+    @if ($status == 'deactivated')
+        <div class="alert alert-warning">
+            <h4 class="alert-heading">Keanggotaan Dinonaktifkan</h4>
+            <p>
+                Akun Anda telah dinonaktifkan dan tidak dapat mengajukan keanggotaan kembali.
+                @if(isset($deactivation_reason) && $deactivation_reason)
+                    Alasan: <strong>{{ $deactivation_reason }}</strong>
+                @endif
+            </p>
+            @if(isset($deactivation_admin) || isset($deactivation_when))
+                <small class="text-muted">
+                    @if(isset($deactivation_admin) && $deactivation_admin)
+                        Oleh: {{ $deactivation_admin }}
+                    @endif
+                    @if(isset($deactivation_when) && $deactivation_when)
+                        pada {{ \Carbon\Carbon::parse($deactivation_when)->format('d F Y H:i') }}
+                    @endif
+                </small>
+            @endif
+        </div>
+    @elseif ($status == 'not_found')
         <!-- // Basic multiple Column Form section start -->
         <div class="alert alert-warning">
 

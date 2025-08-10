@@ -83,12 +83,72 @@
                     </a>
                 </li>
 
-                <li class="sidebar-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
-                    <a href="{{ route('profile.edit') }}" class="sidebar-link">
-                        <i class="bi bi-person-fill"></i>
-                        <span>Profile</span>
+                @if (auth()->user()->biodata)
+                    <li class="sidebar-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
+                        <a href="{{ route('profile.edit') }}" class="sidebar-link">
+                            <i class="bi bi-person-fill"></i>
+                            <span>Profile</span>
+                        </a>
+                    </li>
+                @endif
+
+                <li class="sidebar-item {{ request()->routeIs('membership.status') ? 'active' : '' }}">
+                    <a href="{{ route('membership.status') }}" class="sidebar-link">
+                        <i class="bi bi-card-checklist"></i>
+                        <span>Status Keanggotaan</span>
                     </a>
                 </li>
+
+
+                @if (auth()->user()->biodata)
+                    <li class="sidebar-item {{ request()->routeIs('template.kta') ? 'active' : '' }}">
+                        <a href="{{ route('template.kta') }}" target='_blank' class="sidebar-link">
+                            <i class="bi bi-card-text"></i>
+                            <span>Kartu Anggota</span>
+                        </a>
+                    </li>
+                @endif
+
+                @if (auth()->user()->isAdmin() && auth()->user()->biodata)
+                    <li class="sidebar-title">Super Admin</li>
+                    
+                    <li class="sidebar-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                        <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Admin Dashboard</span>
+                        </a>
+                    </li>
+                    
+                    <li class="sidebar-item {{ request()->routeIs('admin.members.*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.members.index') }}" class="sidebar-link">
+                            <i class="bi bi-person-plus"></i>
+                            <span>Persetujuan Anggota</span>
+                        </a>
+                    </li>
+                    
+                    @if(auth()->user()->isSuperAdmin())
+                        <li class="sidebar-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.users.index') }}" class="sidebar-link">
+                                <i class="bi bi-people"></i>
+                                <span>Kelola Users</span>
+                            </a>
+                        </li>
+                    @endif
+                    
+                    <li class="sidebar-item {{ request()->routeIs('admin.jurusan.*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.jurusan.index') }}" class="sidebar-link">
+                            <i class="bi bi-mortarboard"></i>
+                            <span>Kelola Jurusan</span>
+                        </a>
+                    </li>
+                    
+                    <li class="sidebar-item {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.roles.index') }}" class="sidebar-link">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Kelola Roles</span>
+                        </a>
+                    </li>
+                @endif
 
                 <li class="sidebar-item">
                     <a href="{{ route('logout') }}" class="sidebar-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">

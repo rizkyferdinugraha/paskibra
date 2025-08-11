@@ -313,6 +313,133 @@
     @else
         <div class="alert alert-success text-center" role="alert"><strong>Selamat Datang,
                 {{ Auth::user()->name }}!</strong> Anda telah terdaftar sebagai anggota Paskibra.</div>
+
+        @php
+            $today = now()->startOfDay();
+            $tomorrow = now()->addDay()->startOfDay();
+            
+            // Acara hari ini (belum selesai)
+            $ongoing = \App\Models\Acara::where('selesai', false)
+                ->whereDate('tanggal', $today)
+                ->orderBy('tanggal')
+                ->get();
+            
+            // Acara yang akan datang (belum selesai)
+            $upcoming = \App\Models\Acara::where('selesai', false)
+                ->whereDate('tanggal', '>=', $tomorrow)
+                ->orderBy('tanggal')
+                ->take(6)
+                ->get();
+            
+            // Acara yang sudah selesai (diarsipkan)
+            $archived = \App\Models\Acara::where('selesai', true)
+                ->orderBy('tanggal', 'desc')
+                ->take(6)
+                ->get();
+        @endphp
+
+        @if($ongoing->isNotEmpty())
+            <div class="page-heading mt-4">
+                <h4><i class="bi bi-clock-history text-warning"></i> Sedang Berlangsung</h4>
+            </div>
+            <div class="row">
+                @foreach($ongoing as $acara)
+                    <div class="col-md-4 col-sm-6">
+                        <div class="card border-warning h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">{{ $acara->nama }}</h5>
+                                    @if($acara->wajibHadir->contains('id', auth()->id()))
+                                        <span class="badge bg-danger">Wajib Hadir!</span>
+                                    @endif
+                                </div>
+                                <p class="card-text mb-1">
+                                    <i class="bi bi-clock"></i> {{ \Carbon\Carbon::parse($acara->tanggal)->format('H:i') }}
+                                </p>
+                                <p class="card-text mb-2"><i class="bi bi-geo-alt"></i> {{ $acara->lokasi }}</p>
+                                <p class="card-text small text-muted">
+                                    <i class="bi bi-person-badge"></i> {{ $acara->seragam }}
+                                </p>
+                                <a href="{{ route('acara.show', $acara) }}" class="btn btn-warning btn-sm">Lihat Detail</a>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        @if($upcoming->isNotEmpty())
+            <div class="page-heading mt-4">
+                <h4><i class="bi bi-calendar-event text-primary"></i> Akan Datang</h4>
+            </div>
+            <div class="row">
+                @foreach($upcoming as $acara)
+                    <div class="col-md-4 col-sm-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">{{ $acara->nama }}</h5>
+                                    @if($acara->wajibHadir->contains('id', auth()->id()))
+                                        <span class="badge bg-danger">Wajib Hadir!</span>
+                                    @endif
+                                </div>
+                                <p class="card-text mb-1">
+                                    <i class="bi bi-calendar"></i> {{ \Carbon\Carbon::parse($acara->tanggal)->format('d/m/Y H:i') }}
+                                </p>
+                                <p class="card-text mb-2"><i class="bi bi-geo-alt"></i> {{ $acara->lokasi }}</p>
+                                <p class="card-text small text-muted">
+                                    <i class="bi bi-person-badge"></i> {{ $acara->seragam }}
+                                </p>
+                                <a href="{{ route('acara.show', $acara) }}" class="btn btn-outline-primary btn-sm">Detail</a>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        @if($archived->isNotEmpty())
+            <div class="page-heading mt-4">
+                <h4>
+                    <i class="bi bi-archive text-success"></i> Arsip Acara
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#arsipAcara">
+                        Tampilkan/Sembunyikan
+                    </button>
+                </h4>
+            </div>
+            <div class="collapse" id="arsipAcara">
+                <div class="row">
+                    @foreach($archived as $acara)
+                        <div class="col-md-4 col-sm-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="card-title mb-0">{{ $acara->nama }}</h5>
+                                        @if($acara->wajibHadir->contains('id', auth()->id()))
+                                            <span class="badge bg-success">Kamu Wajib Hadir</span>
+                                        @endif
+                                    </div>
+                                    <p class="card-text mb-1">
+                                        <i class="bi bi-calendar"></i> {{ \Carbon\Carbon::parse($acara->tanggal)->format('d/m/Y H:i') }}
+                                    </p>
+                                    <p class="card-text mb-2"><i class="bi bi-geo-alt"></i> {{ $acara->lokasi }}</p>
+                                    <span class="badge bg-success mb-2">Selesai</span>
+                                    <div>
+                                        <a href="{{ route('acara.show', $acara) }}" class="btn btn-outline-success btn-sm">Lihat Dokumentasi</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        @if($ongoing->isEmpty() && $upcoming->isEmpty() && $archived->isEmpty())
+            <div class="text-center text-muted mt-4">
+                <em>Belum ada acara yang dijadwalkan</em>
+            </div>
+        @endif
     @endif
 
 </x-app-layout>

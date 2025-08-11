@@ -76,7 +76,7 @@
             <ul class="menu">
                 <li class="sidebar-title">Menu</li>
 
-                <li class="sidebar-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <li class="sidebar-item {{ request()->routeIs('dashboard') || request()->routeIs('acara.show') ? 'active' : '' }}">
                     <a href="{{ route('dashboard') }}" class="sidebar-link">
                         <i class="bi bi-grid-fill"></i>
                         <span>Dashboard</span>
@@ -109,8 +109,23 @@
                     </li>
                 @endif
 
+                @if (auth()->user()->role && strcasecmp(auth()->user()->role->nama_role, 'Senior') === 0 && auth()->user()->biodata)
+                    <li class="sidebar-item {{ request()->routeIs('kas.*') ? 'active' : '' }}">
+                        <a href="{{ route('kas.index') }}" class="sidebar-link">
+                            <i class="bi bi-cash-coin"></i>
+                            <span>Kas</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item {{ request()->routeIs('acara.index') || request()->routeIs('acara.create') || request()->routeIs('acara.edit') ? 'active' : '' }}">
+                        <a href="{{ route('acara.index') }}" class="sidebar-link">
+                            <i class="bi bi-calendar-event"></i>
+                            <span>Acara</span>
+                        </a>
+                    </li>
+                @endif
+
                 @if (auth()->user()->isAdmin() && auth()->user()->biodata)
-                    <li class="sidebar-title">Super Admin</li>
+                    <li class="sidebar-title">Admin Menu</li>
                     
                     <li class="sidebar-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         <a href="{{ route('admin.dashboard') }}" class="sidebar-link">

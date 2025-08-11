@@ -72,4 +72,29 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     });
 });
 
+// Kas (hanya Senior)
+Route::middleware(['auth', 'verified', 'senior'])->group(function () {
+    Route::get('/kas', [App\Http\Controllers\KasController::class, 'index'])->name('kas.index');
+    Route::post('/kas', [App\Http\Controllers\KasController::class, 'store'])->name('kas.store');
+    Route::delete('/kas/{kas}', [App\Http\Controllers\KasController::class, 'destroy'])->name('kas.destroy');
+
+    // Acara (hanya Senior)
+    Route::get('/acara', [App\Http\Controllers\AcaraController::class, 'index'])->name('acara.index');
+    Route::get('/acara/create', [App\Http\Controllers\AcaraController::class, 'create'])->name('acara.create');
+    Route::post('/acara', [App\Http\Controllers\AcaraController::class, 'store'])->name('acara.store');
+    Route::get('/acara/{acara}/edit', [App\Http\Controllers\AcaraController::class, 'edit'])->name('acara.edit');
+    Route::put('/acara/{acara}', [App\Http\Controllers\AcaraController::class, 'update'])->name('acara.update');
+    Route::delete('/acara/{acara}', [App\Http\Controllers\AcaraController::class, 'destroy'])->name('acara.destroy');
+    Route::put('/acara/{acara}/toggle', [App\Http\Controllers\AcaraController::class, 'toggleSelesai'])->name('acara.toggle');
+    Route::put('/acara/{acara}/absen', [App\Http\Controllers\AcaraController::class, 'saveAbsen'])->name('acara.absen');
+    Route::post('/acara/{acara}/photo', [App\Http\Controllers\AcaraController::class, 'uploadPhoto'])->name('acara.photo');
+    Route::delete('/photo/{photo}', [App\Http\Controllers\AcaraController::class, 'deletePhoto'])->name('photo.delete');
+    Route::put('/acara/{acara}/feedback', [App\Http\Controllers\AcaraController::class, 'saveFeedback'])->name('acara.feedback');
+});
+
+// Detail acara dapat dilihat semua role (login saja)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/acara/{acara}', [App\Http\Controllers\AcaraController::class, 'show'])->name('acara.show');
+});
+
 require __DIR__.'/auth.php';

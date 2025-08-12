@@ -12,6 +12,11 @@ Route::get('/dashboard', [BiodataController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+// Partial kalender untuk AJAX (tanpa full reload)
+Route::get('/dashboard/calendar', [BiodataController::class, 'calendar'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard.calendar');
+
 Route::get('/template/kta', [BiodataController::class, 'showKta'])
     ->middleware(['auth', 'verified'])
     ->name('template.kta');
@@ -87,6 +92,7 @@ Route::middleware(['auth', 'verified', 'senior'])->group(function () {
     Route::delete('/acara/{acara}', [App\Http\Controllers\AcaraController::class, 'destroy'])->name('acara.destroy');
     Route::put('/acara/{acara}/toggle', [App\Http\Controllers\AcaraController::class, 'toggleSelesai'])->name('acara.toggle');
     Route::put('/acara/{acara}/absen', [App\Http\Controllers\AcaraController::class, 'saveAbsen'])->name('acara.absen');
+    Route::post('/acara/{acara}/grades', [App\Http\Controllers\AcaraController::class, 'saveGrades'])->name('acara.grades');
     Route::post('/acara/{acara}/photo', [App\Http\Controllers\AcaraController::class, 'uploadPhoto'])->name('acara.photo');
     Route::delete('/photo/{photo}', [App\Http\Controllers\AcaraController::class, 'deletePhoto'])->name('photo.delete');
     Route::put('/acara/{acara}/feedback', [App\Http\Controllers\AcaraController::class, 'saveFeedback'])->name('acara.feedback');

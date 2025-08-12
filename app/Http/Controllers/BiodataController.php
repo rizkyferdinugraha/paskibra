@@ -40,9 +40,205 @@ class BiodataController extends Controller
 
         // Jika biodata sudah diisi dan sudah aktif, tampilkan dashboard utama.
         if ($biodata->is_active) {
+            // Ambil data kalender untuk bulan ini atau bulan yang dipilih
+            $currentMonth = request('month', now()->month);
+            $currentYear = request('year', now()->year);
+            
+            // Ambil semua acara yang overlap dengan bulan yang dipilih (mendukung multi-hari)
+            $monthStart = now()->setYear($currentYear)->setMonth($currentMonth)->startOfMonth();
+            $monthEnd = (clone $monthStart)->endOfMonth();
+            $calendarEvents = \App\Models\Acara::whereRaw(
+                'COALESCE(waktu_mulai, tanggal) <= ? AND COALESCE(waktu_selesai, COALESCE(waktu_mulai, tanggal)) >= ?',
+                [$monthEnd, $monthStart]
+            )
+            ->orderByRaw('COALESCE(waktu_mulai, tanggal) asc')
+            ->get();
+
+            // Statistik penilaian user saat ini (rata-rata 1-5)
+            $agg = \App\Models\AcaraPenilaian::where('user_id', Auth::id())
+                ->selectRaw('AVG(NULLIF(fisik,0)) as avg_fisik')
+                ->selectRaw('AVG(NULLIF(kepedulian,0)) as avg_kepedulian')
+                ->selectRaw('AVG(NULLIF(tanggung_jawab,0)) as avg_tanggung_jawab')
+                ->selectRaw('AVG(NULLIF(disiplin,0)) as avg_disiplin')
+                ->selectRaw('AVG(NULLIF(kerjasama,0)) as avg_kerjasama')
+                ->selectRaw('COUNT(*) as assessments_count')
+                ->first();
+
+            $averages = [
+                'avg_fisik' => $agg?->avg_fisik !== null ? (float) $agg->avg_fisik : null,
+                'avg_kepedulian' => $agg?->avg_kepedulian !== null ? (float) $agg->avg_kepedulian : null,
+                'avg_tanggung_jawab' => $agg?->avg_tanggung_jawab !== null ? (float) $agg->avg_tanggung_jawab : null,
+                'avg_disiplin' => $agg?->avg_disiplin !== null ? (float) $agg->avg_disiplin : null,
+                'avg_kerjasama' => $agg?->avg_kerjasama !== null ? (float) $agg->avg_kerjasama : null,
+            ];
+            $nonNull = array_values(array_filter($averages, fn($v) => $v !== null));
+            $avg_overall = count($nonNull) ? array_sum($nonNull) / count($nonNull) : null;
+            $userStats = array_merge($averages, [
+                'avg_overall' => $avg_overall,
+                'assessments_count' => (int) ($agg->assessments_count ?? 0),
+            ]);
+
+            // Statistik kehadiran berdasarkan acara wajib
+            $userId = Auth::id();
+            $requiredMonth = \App\Models\Acara::whereHas('wajibHadir', function($q) use ($userId) {
+                    $q->where('users.id', $userId);
+                })
+                ->where('selesai', true)
+                ->whereBetween('tanggal', [$monthStart, $monthEnd])
+                ->orderBy('tanggal', 'asc')
+                ->get(['id','nama','tanggal','waktu_mulai','waktu_selesai']);
+
+            $requiredIds = $requiredMonth->pluck('id');
+            $presentCount = \App\Models\AcaraAbsen::whereIn('acara_id', $requiredIds)
+                ->where('user_id', $userId)
+                ->where('hadir', true)
+                ->count();
+            $totalRequired = $requiredMonth->count();
+            $absentCount = max($totalRequired - $presentCount, 0);
+            $attendancePercent = $totalRequired > 0 ? round(($presentCount / $totalRequired) * 100) : null;
+            // Statistik kehadiran total (keseluruhan waktu)
+            $requiredAll = \App\Models\Acara::whereHas('wajibHadir', function($q) use ($userId) {
+                    $q->where('users.id', $userId);
+                })
+                ->where('selesai', true)
+                ->orderBy('tanggal', 'asc')
+                ->get(['id']);
+
+            $requiredAllIds = $requiredAll->pluck('id');
+            $presentAll = \App\Models\AcaraAbsen::whereIn('acara_id', $requiredAllIds)
+                ->where('user_id', $userId)
+                ->where('hadir', true)
+                ->count();
+            $totalAll = $requiredAll->count();
+            $percentAll = $totalAll > 0 ? round(($presentAll / $totalAll) * 100) : null;
+
+            $attendanceStats = [
+                'present' => $presentCount,
+                'absent' => $absentCount,
+                'total' => $totalRequired,
+                'percent' => $attendancePercent,
+                'overall_present' => $presentAll,
+                'overall_total' => $totalAll,
+                'overall_percent' => $percentAll,
+            ];
+
+            // Riwayat terakhir absensi (10 terakhir, acara wajib)
+            $recentRequired = \App\Models\Acara::whereHas('wajibHadir', function($q) use ($userId) {
+                    $q->where('users.id', $userId);
+                })
+                ->where('selesai', true)
+                ->where('tanggal', '<=', now())
+                ->orderBy('tanggal', 'desc')
+                ->take(10)
+                ->get(['id','nama','tanggal','waktu_mulai','waktu_selesai']);
+
+            $recentIds = $recentRequired->pluck('id');
+            $absenMap = \App\Models\AcaraAbsen::whereIn('acara_id', $recentIds)
+                ->where('user_id', $userId)
+                ->pluck('hadir', 'acara_id');
+
+            $attendanceHistory = $recentRequired->map(function($a) use ($absenMap) {
+                $start = $a->waktu_mulai ?? $a->tanggal;
+                $hadir = (bool) ($absenMap[$a->id] ?? false);
+                return [
+                    'nama' => $a->nama,
+                    'tanggal' => $start,
+                    'hadir' => $hadir,
+                ];
+            });
+
+            // Jika role bukan Calon Junior atau Junior, tampilkan ringkasan untuk anggota CJ/Junior
+            $roleName = optional(Auth::user()->role)->nama_role;
+            $isJuniorOrCJ = in_array(strtolower($roleName ?? ''), ['junior', 'calon junior']);
+            $membersSummary = collect();
+
+            if (!$isJuniorOrCJ) {
+                $members = \App\Models\User::with(['role', 'biodata'])
+                    ->whereHas('role', function($q) { $q->whereIn('nama_role', ['Junior', 'Calon Junior']); })
+                    ->get();
+
+                $membersSummary = $members->map(function($u) use ($monthStart, $monthEnd) {
+                    $uid = $u->id;
+                    $agg = \App\Models\AcaraPenilaian::where('user_id', $uid)
+                        ->selectRaw('AVG(NULLIF(fisik,0)) as avg_fisik')
+                        ->selectRaw('AVG(NULLIF(kepedulian,0)) as avg_kepedulian')
+                        ->selectRaw('AVG(NULLIF(tanggung_jawab,0)) as avg_tanggung_jawab')
+                        ->selectRaw('AVG(NULLIF(disiplin,0)) as avg_disiplin')
+                        ->selectRaw('AVG(NULLIF(kerjasama,0)) as avg_kerjasama')
+                        ->selectRaw('COUNT(*) as assessments_count')
+                        ->first();
+
+                    $averages = [
+                        'avg_fisik' => $agg?->avg_fisik !== null ? (float) $agg->avg_fisik : null,
+                        'avg_kepedulian' => $agg?->avg_kepedulian !== null ? (float) $agg->avg_kepedulian : null,
+                        'avg_tanggung_jawab' => $agg?->avg_tanggung_jawab !== null ? (float) $agg->avg_tanggung_jawab : null,
+                        'avg_disiplin' => $agg?->avg_disiplin !== null ? (float) $agg->avg_disiplin : null,
+                        'avg_kerjasama' => $agg?->avg_kerjasama !== null ? (float) $agg->avg_kerjasama : null,
+                    ];
+                    $nonNull = array_values(array_filter($averages, fn($v) => $v !== null));
+                    $avg_overall = count($nonNull) ? array_sum($nonNull) / count($nonNull) : null;
+
+                    // Kehadiran bulan ini
+                    $requiredMonth = \App\Models\Acara::whereHas('wajibHadir', function($q) use ($uid) {
+                            $q->where('users.id', $uid);
+                        })
+                        ->where('selesai', true)
+                        ->whereBetween('tanggal', [$monthStart, $monthEnd])
+                        ->get(['id']);
+                    $requiredMonthIds = $requiredMonth->pluck('id');
+                    $presentMonth = \App\Models\AcaraAbsen::whereIn('acara_id', $requiredMonthIds)
+                        ->where('user_id', $uid)
+                        ->where('hadir', true)
+                        ->count();
+                    $totalMonth = $requiredMonth->count();
+                    $percentMonth = $totalMonth > 0 ? round(($presentMonth / $totalMonth) * 100) : null;
+
+                    // Kehadiran total
+                    $requiredAll = \App\Models\Acara::whereHas('wajibHadir', function($q) use ($uid) {
+                            $q->where('users.id', $uid);
+                        })
+                        ->where('selesai', true)
+                        ->get(['id']);
+                    $requiredAllIds = $requiredAll->pluck('id');
+                    $presentAll = \App\Models\AcaraAbsen::whereIn('acara_id', $requiredAllIds)
+                        ->where('user_id', $uid)
+                        ->where('hadir', true)
+                        ->count();
+                    $totalAll = $requiredAll->count();
+                    $percentAll = $totalAll > 0 ? round(($presentAll / $totalAll) * 100) : null;
+
+                    return [
+                        'id' => $u->id,
+                        'name' => $u->name,
+                        'role' => optional($u->role)->nama_role,
+                        'avg_overall' => $avg_overall,
+                        'avg' => $averages,
+                        'assessments_count' => (int) ($agg->assessments_count ?? 0),
+                        'attendance_month' => [
+                            'present' => $presentMonth,
+                            'total' => $totalMonth,
+                            'percent' => $percentMonth,
+                        ],
+                        'attendance_overall' => [
+                            'present' => $presentAll,
+                            'total' => $totalAll,
+                            'percent' => $percentAll,
+                        ],
+                    ];
+                });
+            }
+
             return view('dashboard')
-                ->with('status', 'active') // Untuk menampilkan dashboard utama
-                ->with('biodata', $biodata);
+                ->with('status', 'active')
+                ->with('biodata', $biodata)
+                ->with('calendarEvents', $calendarEvents)
+                ->with('currentMonth', $currentMonth)
+                ->with('currentYear', $currentYear)
+                ->with('userStats', $userStats)
+                ->with('attendanceStats', $attendanceStats)
+                ->with('attendanceHistory', $attendanceHistory)
+                ->with('showMembersSummary', !$isJuniorOrCJ)
+                ->with('membersSummary', $membersSummary);
         }
 
         // Jika biodata sudah diisi tapi belum aktif, tampilkan status pending.
@@ -50,6 +246,32 @@ class BiodataController extends Controller
             ->with('status', 'pending') // Untuk menampilkan status pending
             ->with('biodata', $biodata)
             ->with('jurusan', $biodata->jurusan->nama_jurusan);
+    }
+
+    /**
+     * Render partial kalender untuk navigasi bulan via AJAX.
+     */
+    public function calendar(Request $request)
+    {
+        $currentMonth = (int) $request->get('month', now()->month);
+        $currentYear = (int) $request->get('year', now()->year);
+
+        $monthStart = now()->setYear($currentYear)->setMonth($currentMonth)->startOfMonth();
+        $monthEnd = (clone $monthStart)->endOfMonth();
+        $calendarEvents = \App\Models\Acara::whereRaw(
+            'COALESCE(waktu_mulai, tanggal) <= ? AND COALESCE(waktu_selesai, COALESCE(waktu_mulai, tanggal)) >= ?',
+            [$monthEnd, $monthStart]
+        )
+        ->orderByRaw('COALESCE(waktu_mulai, tanggal) asc')
+        ->get();
+
+        // Kembalikan hanya komponen kalender tanpa assets (style/script) untuk diinject via JS
+        return view('components.calendar', [
+            'events' => $calendarEvents,
+            'currentMonth' => $currentMonth,
+            'currentYear' => $currentYear,
+            'withAssets' => true,
+        ]);
     }
 
     /**

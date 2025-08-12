@@ -14,7 +14,7 @@
                 <thead>
                     <tr>
                         <th>Nama</th>
-                        <th>Tanggal</th>
+                        <th>Waktu</th>
                         <th>Lokasi</th>
                         <th>Seragam</th>
                         <th>Wajib Hadir</th>
@@ -25,7 +25,11 @@
                     @forelse ($acaras as $acara)
                         <tr>
                             <td>{{ $acara->nama }}</td>
-                            <td>{{ $acara->tanggal->format('d/m/Y H:i') }}</td>
+                            <td>
+                                @php($mulai = $acara->waktu_mulai ?? $acara->tanggal)
+                                @php($selesai = $acara->waktu_selesai)
+                                {{ $mulai?->format('d/m/Y H:i') }}@if($selesai) - {{ $selesai->format('d/m/Y H:i') }}@endif
+                            </td>
                             <td>{{ $acara->lokasi }}</td>
                             <td>{{ $acara->seragam }}</td>
                             <td>{{ $acara->wajibHadir->count() }} orang</td>

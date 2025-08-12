@@ -25,9 +25,21 @@
                         <label class="form-label">Nama Acara</label>
                         <input type="text" name="nama" class="form-control" value="{{ old('nama', $acara->nama) }}" required>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Tanggal & Waktu</label>
-                        <input type="datetime-local" name="tanggal" class="form-control" value="{{ old('tanggal', $acara->tanggal ? $acara->tanggal->format('Y-m-d\TH:i') : '') }}" required>
+                    <div class="col-md-3">
+                        <label class="form-label">Tanggal</label>
+                        <input type="date" name="tanggal_date" class="form-control" value="{{ old('tanggal_date', ($acara->waktu_mulai ?? $acara->tanggal) ? ($acara->waktu_mulai ?? $acara->tanggal)->format('Y-m-d') : '') }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Waktu Mulai</label>
+                        <input type="time" name="waktu_mulai" class="form-control" value="{{ old('waktu_mulai', $acara->waktu_mulai ? $acara->waktu_mulai->format('H:i') : '') }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tanggal Selesai</label>
+                        <input type="date" name="tanggal_selesai_date" class="form-control" value="{{ old('tanggal_selesai_date', $acara->waktu_selesai ? $acara->waktu_selesai->format('Y-m-d') : (($acara->waktu_mulai ?? $acara->tanggal)? ($acara->waktu_mulai ?? $acara->tanggal)->format('Y-m-d') : '')) }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Waktu Selesai</label>
+                        <input type="time" name="waktu_selesai" class="form-control" value="{{ old('waktu_selesai', $acara->waktu_selesai ? $acara->waktu_selesai->format('H:i') : '') }}" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Lokasi</label>

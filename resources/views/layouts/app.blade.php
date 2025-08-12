@@ -21,6 +21,7 @@
         <link rel="stylesheet" href="{{ asset('mazer/assets/compiled/css/iconly.css') }}" />
         <link rel="stylesheet" href="{{ asset('mazer/assets/extensions/filepond/filepond.css') }}">
         <link rel="stylesheet" href="{{ asset('mazer/assets/extensions/filepond-plugin-image-preview/filepond-plugin-image-preview.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}" />
     </head>
 
     <body>
@@ -53,5 +54,87 @@
         <script src="{{ asset('mazer/assets/static/js/pages/filepond.js') }}"></script>
 
         <script src="{{ asset('mazer/assets/compiled/js/app.js') }}"></script>
+        <script src="{{ asset('mazer/assets/extensions/apexcharts/apexcharts.min.js') }}"></script>
+        <script src="{{ asset('mazer/assets/extensions/chart.js/chart.js') }}"></script>
+        <script>
+            // Inisialisasi interaktivitas kalender dan AJAX navigation
+            (function() {
+                function initTooltips(root) {
+                    if (!window.bootstrap || !bootstrap.Tooltip) return;
+                    var triggerList = [].slice.call((root || document).querySelectorAll('[data-bs-toggle="tooltip"]'));
+                    triggerList.forEach(function(el) { new bootstrap.Tooltip(el); });
+                }
+
+                function pulseToday(root) {
+                    var todayCell = (root || document).querySelector('.calendar-day.today');
+                    if (!todayCell) return;
+                    // Tambahkan keyframes jika belum ada
+                    if (!document.getElementById('calendar-pulse-style')) {
+                        var s = document.createElement('style');
+                        s.id = 'calendar-pulse-style';
+                        s.textContent = '@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(25,118,210,.4)}70%{box-shadow:0 0 0 10px rgba(25,118,210,0)}100%{box-shadow:0 0 0 0 rgba(25,118,210,0)}}';
+                        document.head.appendChild(s);
+                    }
+                    todayCell.style.animation = 'pulse 2s infinite';
+                }
+
+                window.initCalendarEnhancements = function(root) {
+                    initTooltips(root);
+                    pulseToday(root);
+                };
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    var calendarRoot = document.getElementById('calendar-root');
+                    if (!calendarRoot) return;
+                    var endpoint = "{{ route('dashboard.calendar') }}";
+
+                    function extractQuery(href) {
+                        try {
+                            var url = new URL(href, window.location.origin);
+                            return url.searchParams;
+                        } catch (e) {
+                            return new URLSearchParams();
+                        }
+                    }
+
+                    async function loadCalendar(params) {
+                        var qs = new URLSearchParams(params || {});
+                        calendarRoot.style.opacity = '0.6';
+                        try {
+                            var res = await fetch(endpoint + (qs.toString() ? ('?' + qs.toString()) : ''));
+                            var html = await res.text();
+                            calendarRoot.innerHTML = html;
+                            window.initCalendarEnhancements(calendarRoot);
+                            // Opsional: sinkronkan URL query agar bisa dibagikan
+                            var newUrl = new URL(window.location.href);
+                            // Hanya atur month/year
+                            if (qs.get('month')) newUrl.searchParams.set('month', qs.get('month')); else newUrl.searchParams.delete('month');
+                            if (qs.get('year')) newUrl.searchParams.set('year', qs.get('year')); else newUrl.searchParams.delete('year');
+                            window.history.replaceState(null, '', newUrl.toString());
+                        } finally {
+                            calendarRoot.style.opacity = '';
+                        }
+                    }
+
+                    // Expose ke global supaya bisa dipanggil saat tab aktif
+                    window.loadDashboardCalendar = loadCalendar;
+
+                    // Event delegation: intercept klik navigasi kalender
+                    document.addEventListener('click', function(e) {
+                        var target = e.target.closest('#calendar-root .calendar-navigation a');
+                        if (!target) return;
+                        e.preventDefault();
+                        var params = extractQuery(target.href);
+                        var payload = {};
+                        if (params.get('month')) payload.month = params.get('month');
+                        if (params.get('year')) payload.year = params.get('year');
+                        loadCalendar(payload);
+                    });
+
+                    // Inisialisasi pertama pada load
+                    window.initCalendarEnhancements(calendarRoot);
+                });
+            })();
+        </script>
     </body>
 </html>

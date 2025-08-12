@@ -13,6 +13,8 @@ class Acara extends Model
         'nama',
         'deskripsi',
         'tanggal',
+        'waktu_mulai',
+        'waktu_selesai',
         'lokasi',
         'seragam',
         'perlengkapan',
@@ -23,6 +25,8 @@ class Acara extends Model
 
     protected $casts = [
         'tanggal' => 'datetime',
+        'waktu_mulai' => 'datetime',
+        'waktu_selesai' => 'datetime',
         'perlengkapan' => 'array',
     ];
 
@@ -51,7 +55,8 @@ class Acara extends Model
      */
     public function hasStarted()
     {
-        return $this->tanggal <= now();
+        $start = $this->waktu_mulai ?: $this->tanggal;
+        return $start && $start <= now();
     }
 
     /**
@@ -60,6 +65,14 @@ class Acara extends Model
     public function hasNotStarted()
     {
         return !$this->hasStarted();
+    }
+
+    /**
+     * Cek apakah acara sudah berakhir berdasarkan waktu_selesai
+     */
+    public function hasEnded(): bool
+    {
+        return $this->waktu_selesai ? $this->waktu_selesai <= now() : false;
     }
 
     /**

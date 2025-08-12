@@ -16,6 +16,12 @@ class AcaraController extends Controller
 {
     public function index()
     {
+        // Auto-finish: tandai selesai jika sudah melewati waktu_selesai
+        \App\Models\Acara::whereNotNull('waktu_selesai')
+            ->where('selesai', false)
+            ->where('waktu_selesai', '<=', now())
+            ->update(['selesai' => true]);
+
         $acaras = Acara::with(['wajibHadir'])->orderBy('tanggal', 'desc')->paginate(15);
         return view('admin.acara.index', compact('acaras'));
     }
@@ -41,7 +47,10 @@ class AcaraController extends Controller
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
-            'tanggal' => ['required', 'date_format:Y-m-d\TH:i'],
+            'tanggal_date' => ['required', 'date_format:Y-m-d'],
+            'waktu_mulai' => ['required', 'date_format:H:i'],
+            'tanggal_selesai_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:tanggal_date'],
+            'waktu_selesai' => ['required', 'date_format:H:i'],
             'lokasi' => ['nullable', 'string', 'max:255'],
             'seragam' => ['nullable', 'string', 'max:255'],
             'perlengkapan' => ['array'],
@@ -50,11 +59,22 @@ class AcaraController extends Controller
             'wajib_hadir.*' => ['integer', 'exists:users,id'],
         ]);
 
-        DB::transaction(function () use ($validated): void {
+        $start = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $validated['tanggal_date'].' '.$validated['waktu_mulai']);
+        $end = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $validated['tanggal_selesai_date'].' '.$validated['waktu_selesai']);
+        if ($end->lte($start)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'waktu_selesai' => 'Waktu selesai harus setelah waktu mulai.'
+            ]);
+        }
+
+        DB::transaction(function () use ($validated, $start, $end): void {
             $acara = Acara::create([
                 'nama' => $validated['nama'],
                 'deskripsi' => $validated['deskripsi'] ?? null,
-                'tanggal' => $validated['tanggal'],
+                // Simpan kolom legacy 'tanggal' sebagai waktu mulai untuk kompatibilitas
+                'tanggal' => $start,
+                'waktu_mulai' => $start,
+                'waktu_selesai' => $end,
                 'lokasi' => $validated['lokasi'] ?? null,
                 'seragam' => $validated['seragam'] ?? null,
                 'perlengkapan' => $validated['perlengkapan'] ?? [],
@@ -84,7 +104,10 @@ class AcaraController extends Controller
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
-            'tanggal' => ['required', 'date_format:Y-m-d\TH:i'],
+            'tanggal_date' => ['required', 'date_format:Y-m-d'],
+            'waktu_mulai' => ['required', 'date_format:H:i'],
+            'tanggal_selesai_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:tanggal_date'],
+            'waktu_selesai' => ['required', 'date_format:H:i'],
             'lokasi' => ['nullable', 'string', 'max:255'],
             'seragam' => ['nullable', 'string', 'max:255'],
             'perlengkapan' => ['array'],
@@ -93,11 +116,21 @@ class AcaraController extends Controller
             'wajib_hadir.*' => ['integer', 'exists:users,id'],
         ]);
 
-        DB::transaction(function () use ($validated, $acara): void {
+        $start = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $validated['tanggal_date'].' '.$validated['waktu_mulai']);
+        $end = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $validated['tanggal_selesai_date'].' '.$validated['waktu_selesai']);
+        if ($end->lte($start)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'waktu_selesai' => 'Waktu selesai harus setelah waktu mulai.'
+            ]);
+        }
+
+        DB::transaction(function () use ($validated, $acara, $start, $end): void {
             $acara->update([
                 'nama' => $validated['nama'],
                 'deskripsi' => $validated['deskripsi'] ?? null,
-                'tanggal' => $validated['tanggal'],
+                'tanggal' => $start,
+                'waktu_mulai' => $start,
+                'waktu_selesai' => $end,
                 'lokasi' => $validated['lokasi'] ?? null,
                 'seragam' => $validated['seragam'] ?? null,
                 'perlengkapan' => $validated['perlengkapan'] ?? [],
@@ -142,7 +175,73 @@ class AcaraController extends Controller
             }
         }
 
-        return view('admin.acara.show', compact('acara', 'hadir', 'tidakHadir'));
+        // Ambil penilaian yang sudah ada oleh senior ini (jika ada)
+        $existingGrades = [];
+        $authUser = Auth::user();
+        if ($authUser && $authUser->role && strcasecmp($authUser->role->nama_role, 'Senior') === 0) {
+            $existingGrades = \App\Models\AcaraPenilaian::where('acara_id', $acara->id)
+                ->where('graded_by', Auth::id())
+                ->get()
+                ->keyBy('user_id');
+        }
+
+        return view('admin.acara.show', compact('acara', 'hadir', 'tidakHadir', 'existingGrades'));
+    }
+
+    public function saveGrades(Request $request, Acara $acara)
+    {
+        $this->authorizeSenior();
+        // Hanya saat acara sudah dimulai
+        if ($acara->hasNotStarted()) {
+            return back()->with('error', 'Penilaian hanya dapat dilakukan setelah acara dimulai.');
+        }
+
+        $payload = $request->validate([
+            'grades' => ['array'],
+            'grades.*.fisik' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'grades.*.kepedulian' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'grades.*.tanggung_jawab' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'grades.*.disiplin' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'grades.*.kerjasama' => ['nullable', 'integer', 'min:1', 'max:5'],
+        ]);
+
+        $grades = $payload['grades'] ?? [];
+
+        // Hanya nilai peserta dengan role Calon Junior / Junior dan yang hadir
+        $eligibleRoles = ['Calon Junior', 'Junior'];
+        $wajibIds = $acara->wajibHadir()->pluck('users.id')->all();
+        $absenHadir = $acara->absens()->where('hadir', true)->pluck('user_id')->all();
+
+        foreach ($grades as $userId => $g) {
+            if (!in_array((int)$userId, $absenHadir, true)) continue;
+            if (!in_array((int)$userId, $wajibIds, true)) continue;
+            $user = \App\Models\User::with('role')->find($userId);
+            if (!$user || !$user->role || !in_array($user->role->nama_role, $eligibleRoles, true)) continue;
+
+            // Skip jika semua nilai null
+            $allNull = true;
+            foreach (['fisik','kepedulian','tanggung_jawab','disiplin','kerjasama'] as $k) {
+                if (isset($g[$k]) && $g[$k] !== null && $g[$k] !== '') { $allNull = false; break; }
+            }
+            if ($allNull) continue;
+
+            \App\Models\AcaraPenilaian::updateOrCreate(
+                [
+                    'acara_id' => $acara->id,
+                    'user_id' => $userId,
+                    'graded_by' => Auth::id(),
+                ],
+                [
+                    'fisik' => (int)($g['fisik'] ?? 0) ?: 0,
+                    'kepedulian' => (int)($g['kepedulian'] ?? 0) ?: 0,
+                    'tanggung_jawab' => (int)($g['tanggung_jawab'] ?? 0) ?: 0,
+                    'disiplin' => (int)($g['disiplin'] ?? 0) ?: 0,
+                    'kerjasama' => (int)($g['kerjasama'] ?? 0) ?: 0,
+                ]
+            );
+        }
+
+        return back()->with('success', 'Penilaian peserta berhasil disimpan.');
     }
 
     public function toggleSelesai(Acara $acara)

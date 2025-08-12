@@ -47,8 +47,15 @@
                                     <h6 class="mb-0">Waktu</h6>
                                 </div>
                                 <div class="ps-5">
-                                    <p class="mb-0">{{ $acara->tanggal->translatedFormat('l, d F Y') }}</p>
-                                    <p class="mb-0">Pukul {{ $acara->tanggal->format('H:i') }} WIB</p>
+                                    @php($mulai = $acara->waktu_mulai ?? $acara->tanggal)
+                                    @php($selesai = $acara->waktu_selesai)
+                                    <p class="mb-0">
+                                        {{ $mulai->translatedFormat('l, d F Y') }}
+                                        @if($selesai && $selesai->isSameDay($mulai) === false)
+                                            - {{ $selesai->translatedFormat('l, d F Y') }}
+                                        @endif
+                                    </p>
+                                    <p class="mb-0">Pukul {{ $mulai->format('H:i') }}@if($selesai) - {{ $selesai->format('H:i') }}@endif WIB</p>
                                 </div>
                             </div>
 
@@ -163,7 +170,8 @@
                             <div class="alert alert-warning">
                                 <i class="bi bi-clock"></i>
                                 <strong>Acara belum dimulai.</strong> 
-                                Absen hanya dapat dilakukan setelah acara dimulai pada {{ $acara->tanggal->translatedFormat('l, d F Y') }} pukul {{ $acara->tanggal->format('H:i') }} WIB.
+                                @php($mulai = $acara->waktu_mulai ?? $acara->tanggal)
+                                Absen hanya dapat dilakukan setelah acara dimulai pada {{ $mulai->translatedFormat('l, d F Y') }} pukul {{ $mulai->format('H:i') }} WIB.
                             </div>
                         @else
                             <form action="{{ route('acara.absen', $acara) }}" method="POST">
@@ -203,6 +211,74 @@
 
             @if (auth()->user()->role && strcasecmp(auth()->user()->role->nama_role, 'Senior')===0)
                 <div class="card mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Penilaian Peserta (1–5)</h5>
+                        <small class="text-muted">Hanya Calon Junior & Junior yang bisa dinilai</small>
+                    </div>
+                    <div class="card-body">
+                        @if($acara->hasNotStarted())
+                            <div class="alert alert-warning">
+                                <i class="bi bi-clock"></i>
+                                <strong>Acara belum dimulai.</strong>
+                                Penilaian peserta tersedia setelah acara dimulai.
+                            </div>
+                        @else
+                            <form action="{{ route('acara.grades', $acara) }}" method="POST">
+                                @csrf
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>No. KTA</th>
+                                                <th>Nama</th>
+                                                <th>Role</th>
+                                                <th class="text-center">Hadir</th>
+                                                <th class="text-center">Fisik</th>
+                                                <th class="text-center">Kepedulian</th>
+                                                <th class="text-center">Tanggung Jawab</th>
+                                                <th class="text-center">Disiplin</th>
+                                                <th class="text-center">Kerjasama</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @php($eligibleRoles = ['Calon Junior','Junior'])
+                                            @foreach ($acara->wajibHadir as $user)
+                                                @php($roleName = $user->role?->nama_role)
+                                                @php($hadir = optional($acara->absens->firstWhere('user_id', $user->id))->hadir)
+                                                @if($hadir && in_array($roleName, $eligibleRoles))
+                                                    @php($g = $existingGrades[$user->id] ?? null)
+                                                    <tr>
+                                                        <td><span class="badge bg-secondary">{{ $user->biodata?->no_kta ?? '-' }}</span></td>
+                                                        <td>{{ $user->name }}</td>
+                                                        <td>{{ $roleName }}</td>
+                                                        <td class="text-center">
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                        </td>
+                                                        @foreach(['fisik','kepedulian','tanggung_jawab','disiplin','kerjasama'] as $k)
+                                                            <td style="width:120px">
+                                                                <select name="grades[{{ $user->id }}][{{ $k }}]" class="form-select form-select-sm">
+                                                                    <option value="">-</option>
+                                                                    @for($i=1;$i<=5;$i++)
+                                                                        <option value="{{ $i }}" @selected(optional($g)->{$k} === $i)>{{ $i }}</option>
+                                                                    @endfor
+                                                                </select>
+                                                            </td>
+                                                        @endforeach
+                                                    </tr>
+                                                @endif
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button class="btn btn-primary">Simpan Penilaian</button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
+            @if (auth()->user()->role && strcasecmp(auth()->user()->role->nama_role, 'Senior')===0)
+                <div class="card mt-4">
                     <div class="card-header">
                         <h5>Feedback Hasil Kegiatan</h5>
                     </div>
@@ -211,7 +287,8 @@
                             <div class="alert alert-warning">
                                 <i class="bi bi-clock"></i>
                                 <strong>Acara belum dimulai.</strong> 
-                                Feedback hanya dapat diberikan setelah acara dimulai pada {{ $acara->tanggal->translatedFormat('l, d F Y') }} pukul {{ $acara->tanggal->format('H:i') }} WIB.
+                                @php($mulai = $acara->waktu_mulai ?? $acara->tanggal)
+                                Feedback hanya dapat diberikan setelah acara dimulai pada {{ $mulai->translatedFormat('l, d F Y') }} pukul {{ $mulai->format('H:i') }} WIB.
                             </div>
                         @else
                             <form action="{{ route('acara.feedback', $acara) }}" method="POST">

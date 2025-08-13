@@ -26,5 +26,8 @@
                 {{ $slot }}
             </div>
         </div>
+
+        <!-- Loader Component -->
+        <x-loader />
     </body>
 </html>

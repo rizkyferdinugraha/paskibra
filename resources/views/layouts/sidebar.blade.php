@@ -76,16 +76,27 @@
             <ul class="menu">
                 <li class="sidebar-title">Menu</li>
 
-                <li class="sidebar-item {{ request()->routeIs('dashboard') || request()->routeIs('acara.show') ? 'active' : '' }}">
-                    <a href="{{ route('dashboard') }}" class="sidebar-link">
-                        <i class="bi bi-grid-fill"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
+				@php
+					$__auth = auth()->user();
+					$__isRoleAuthorized = $__auth && $__auth->role && in_array(strtolower($__auth->role->nama_role), ['pembina','pelatih','senior']);
+					$__isAdminOrSuper = $__auth && ($__auth->isAdmin());
+					$dashboardBadgeCount = \App\Models\Acara::where('selesai', false)->count();
+				@endphp
+				<li class="sidebar-item {{ request()->routeIs('dashboard') || request()->routeIs('acara.show') ? 'active' : '' }}">
+					<a href="{{ route('dashboard') }}" class="sidebar-link d-flex align-items-center position-relative pe-4">
+						<span>
+							<i class="bi bi-grid-fill"></i>
+							<span>Dashboard</span>
+						</span>
+						@if($dashboardBadgeCount > 0)
+							<span class="badge bg-danger position-absolute top-50 translate-middle-y end-0 me-3">{{ $dashboardBadgeCount }}</span>
+						@endif
+					</a>
+				</li>
 
                 @if (auth()->user()->biodata)
                     <li class="sidebar-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
-                        <a href="{{ route('profile.edit') }}" class="sidebar-link">
+                        <a href="{{ route('profile.edit') }}" class="sidebar-link" data-no-loader>
                             <i class="bi bi-person-fill"></i>
                             <span>Profile</span>
                         </a>
@@ -93,7 +104,7 @@
                 @endif
 
                 <li class="sidebar-item {{ request()->routeIs('membership.status') ? 'active' : '' }}">
-                    <a href="{{ route('membership.status') }}" class="sidebar-link">
+                    <a href="{{ route('membership.status') }}" class="sidebar-link" data-no-loader>
                         <i class="bi bi-card-checklist"></i>
                         <span>Status Keanggotaan</span>
                     </a>
@@ -102,7 +113,7 @@
 
                 @if (auth()->user()->biodata)
                     <li class="sidebar-item {{ request()->routeIs('template.kta') ? 'active' : '' }}">
-                        <a href="{{ route('template.kta') }}" target='_blank' class="sidebar-link">
+                        <a href="{{ route('template.kta') }}" target='_blank' class="sidebar-link" data-no-loader>
                             <i class="bi bi-card-text"></i>
                             <span>Kartu Anggota</span>
                         </a>
@@ -111,15 +122,32 @@
 
                 @if (auth()->user()->role && strcasecmp(auth()->user()->role->nama_role, 'Senior') === 0 && auth()->user()->biodata)
                     <li class="sidebar-item {{ request()->routeIs('kas.*') ? 'active' : '' }}">
-                        <a href="{{ route('kas.index') }}" class="sidebar-link">
+                        <a href="{{ route('kas.index') }}" class="sidebar-link" data-no-loader>
                             <i class="bi bi-cash-coin"></i>
                             <span>Kas</span>
                         </a>
                     </li>
-                    <li class="sidebar-item {{ request()->routeIs('acara.index') || request()->routeIs('acara.create') || request()->routeIs('acara.edit') ? 'active' : '' }}">
-                        <a href="{{ route('acara.index') }}" class="sidebar-link">
-                            <i class="bi bi-calendar-event"></i>
-                            <span>Acara</span>
+					<li class="sidebar-item {{ request()->routeIs('acara.index') || request()->routeIs('acara.create') || request()->routeIs('acara.edit') ? 'active' : '' }}">
+						<a href="{{ route('acara.index') }}" class="sidebar-link" data-no-loader>
+							<i class="bi bi-calendar-event"></i>
+							<span>Acara</span>
+						</a>
+					</li>
+                @endif
+
+                @if (auth()->user()->role && in_array(strtolower(auth()->user()->role->nama_role), ['pembina','pelatih','senior']))
+                    @php
+                        $pendingComplaintsCount = \App\Models\Complaint::whereIn('status', ['baru', 'diproses'])->count();
+                    @endphp
+					<li class="sidebar-item {{ request()->routeIs('complaints.index') ? 'active' : '' }}">
+						<a href="{{ route('complaints.index') }}" class="sidebar-link d-flex align-items-center position-relative pe-4" data-no-loader>
+                            <span>
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span>Komplain Masuk</span>
+                            </span>
+							@if($pendingComplaintsCount > 0)
+								<span class="badge bg-danger position-absolute top-50 translate-middle-y end-0 me-3">{{ $pendingComplaintsCount }}</span>
+							@endif
                         </a>
                     </li>
                 @endif
@@ -128,22 +156,30 @@
                     <li class="sidebar-title">Admin Menu</li>
                     
                     <li class="sidebar-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                        <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
+                        <a href="{{ route('admin.dashboard') }}" class="sidebar-link" data-no-loader>
                             <i class="bi bi-speedometer2"></i>
                             <span>Admin Dashboard</span>
                         </a>
                     </li>
                     
-                    <li class="sidebar-item {{ request()->routeIs('admin.members.*') ? 'active' : '' }}">
-                        <a href="{{ route('admin.members.index') }}" class="sidebar-link">
-                            <i class="bi bi-person-plus"></i>
-                            <span>Persetujuan Anggota</span>
+                    @php
+                        $pendingMembersCount = \App\Models\Biodata::where('is_active', false)->count();
+                    @endphp
+						<li class="sidebar-item {{ request()->routeIs('admin.members.*') ? 'active' : '' }}">
+							<a href="{{ route('admin.members.index') }}" class="sidebar-link d-flex align-items-center position-relative pe-4" data-no-loader>
+                            <span>
+                                <i class="bi bi-person-plus"></i>
+                                <span>Persetujuan Anggota</span>
+                            </span>
+								@if($pendingMembersCount > 0)
+									<span class="badge bg-danger position-absolute top-50 translate-middle-y end-0 me-3">{{ $pendingMembersCount }}</span>
+								@endif
                         </a>
                     </li>
                     
                     @if(auth()->user()->isSuperAdmin())
                         <li class="sidebar-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                            <a href="{{ route('admin.users.index') }}" class="sidebar-link">
+                            <a href="{{ route('admin.users.index') }}" class="sidebar-link" data-no-loader>
                                 <i class="bi bi-people"></i>
                                 <span>Kelola Users</span>
                             </a>
@@ -151,14 +187,14 @@
                     @endif
                     
                     <li class="sidebar-item {{ request()->routeIs('admin.jurusan.*') ? 'active' : '' }}">
-                        <a href="{{ route('admin.jurusan.index') }}" class="sidebar-link">
+                        <a href="{{ route('admin.jurusan.index') }}" class="sidebar-link" data-no-loader>
                             <i class="bi bi-mortarboard"></i>
                             <span>Kelola Jurusan</span>
                         </a>
                     </li>
                     
                     <li class="sidebar-item {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
-                        <a href="{{ route('admin.roles.index') }}" class="sidebar-link">
+                        <a href="{{ route('admin.roles.index') }}" class="sidebar-link" data-no-loader>
                             <i class="bi bi-shield-check"></i>
                             <span>Kelola Roles</span>
                         </a>
@@ -166,7 +202,7 @@
                 @endif
 
                 <li class="sidebar-item">
-                    <a href="{{ route('logout') }}" class="sidebar-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                    <a href="{{ route('logout') }}" class="sidebar-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" data-no-loader>
                         <i class="bi bi-box-arrow-right"></i>
                         <span>Log Out</span>
                     </a>

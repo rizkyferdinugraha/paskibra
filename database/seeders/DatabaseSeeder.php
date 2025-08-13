@@ -33,6 +33,8 @@ class DatabaseSeeder extends Seeder
         // Create biodata for super admin
         $this->call([
             SuperAdminBiodataSeeder::class,
+            TestMembersSeeder::class,
+            DummyDataSeeder::class,
         ]);
     }
 }

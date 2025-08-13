@@ -147,6 +147,16 @@ class BiodataController extends Controller
                 ];
             });
 
+            // Riwayat komplain selesai untuk user terlapor (progress/riwayat disiplin)
+            $complaintsCount = \App\Models\Complaint::where('terlapor_user_id', $userId)
+                ->where('status', 'selesai')
+                ->count();
+            $complaintsHistory = \App\Models\Complaint::where('terlapor_user_id', $userId)
+                ->where('status', 'selesai')
+                ->orderBy('created_at', 'desc')
+                ->take(10)
+                ->get(['id', 'nama_pelapor', 'judul', 'deskripsi', 'bukti_path', 'status', 'follow_up', 'follow_up_at', 'created_at']);
+
             // Jika role bukan Calon Junior atau Junior, tampilkan ringkasan untuk anggota CJ/Junior
             $roleName = optional(Auth::user()->role)->nama_role;
             $isJuniorOrCJ = in_array(strtolower($roleName ?? ''), ['junior', 'calon junior']);
@@ -238,7 +248,9 @@ class BiodataController extends Controller
                 ->with('attendanceStats', $attendanceStats)
                 ->with('attendanceHistory', $attendanceHistory)
                 ->with('showMembersSummary', !$isJuniorOrCJ)
-                ->with('membersSummary', $membersSummary);
+                ->with('membersSummary', $membersSummary)
+                ->with('complaintsCount', $complaintsCount)
+                ->with('complaintsHistory', $complaintsHistory);
         }
 
         // Jika biodata sudah diisi tapi belum aktif, tampilkan status pending.

@@ -2,11 +2,17 @@
 
 use App\Http\Controllers\BiodataController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ComplaintController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('landing');
 });
+
+// Komplain publik (guest)
+Route::get('/komplain', [ComplaintController::class, 'create'])->name('complaints.create');
+Route::post('/komplain', [ComplaintController::class, 'store'])->name('complaints.store');
+Route::get('/komplain/terima-kasih', [ComplaintController::class, 'thanks'])->name('complaints.thanks');
 
 Route::get('/dashboard', [BiodataController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -101,6 +107,22 @@ Route::middleware(['auth', 'verified', 'senior'])->group(function () {
 // Detail acara dapat dilihat semua role (login saja)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/acara/{acara}', [App\Http\Controllers\AcaraController::class, 'show'])->name('acara.show');
+    // Daftar komplain - hanya role tertentu
+    Route::get('/komplain/list', [ComplaintController::class, 'index'])
+        ->middleware('role_in:Pembina,Pelatih,Senior')
+        ->name('complaints.index');
+    Route::get('/komplain/{complaint}', [ComplaintController::class, 'show'])
+        ->middleware('role_in:Pembina,Pelatih,Senior')
+        ->name('complaints.show');
+    Route::put('/komplain/{complaint}/selesai', [ComplaintController::class, 'markDone'])
+        ->middleware('role_in:Pembina,Pelatih,Senior')
+        ->name('complaints.done');
+    Route::delete('/komplain/{complaint}', [ComplaintController::class, 'destroy'])
+        ->middleware('role_in:Pembina,Pelatih,Senior')
+        ->name('complaints.destroy');
+    Route::post('/komplain/{complaint}/follow-up', [ComplaintController::class, 'saveFollowUp'])
+        ->middleware('role_in:Pembina,Pelatih,Senior')
+        ->name('complaints.followup');
 });
 
 require __DIR__.'/auth.php';

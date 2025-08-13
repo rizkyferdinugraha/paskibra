@@ -353,6 +353,7 @@
             <div class="text-muted">Ringkasan kegiatan dan statistik</div>
         </div>
         <div class="dashboard-tabs-container mb-4">
+            @php($isSenior = auth()->user()->role && strcasecmp(auth()->user()->role->nama_role, 'Senior') === 0)
             <ul class="nav nav-pills nav-fill dashboard-tabs" id="dashboardTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active dashboard-tab-item" id="tab-acara-tab" data-bs-toggle="tab" data-bs-target="#tab-acara" type="button" role="tab" aria-controls="tab-acara" aria-selected="true">
@@ -370,6 +371,16 @@
                         </div>
                     </button>
                 </li>
+                @if($isSenior)
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link dashboard-tab-item" id="tab-komplain-tab" data-bs-toggle="tab" data-bs-target="#tab-komplain" type="button" role="tab" aria-controls="tab-komplain" aria-selected="false">
+                        <div class="tab-content-wrapper">
+                            <span class="tab-text">Riwayat Komplain</span>
+                            <div class="tab-indicator"></div>
+                        </div>
+                    </button>
+                </li>
+                @endif
             </ul>
         </div>
 
@@ -795,7 +806,7 @@
                     </div>
                 </div>
 
-                <div class="row g-3 mt-1">
+                    <div class="row g-3 mt-1">
                     <div class="col-md-3 col-6">
                         <div class="card h-100 stat-card">
                             <div class="card-body">
@@ -822,16 +833,10 @@
                         <div class="card h-100 stat-card">
                             <div class="card-body">
                                 <div class="stat-icon-wrapper mb-2">
-                                    <i class="bi bi-journal-check text-muted"></i>
+                                    <i class="bi bi-flag-fill text-danger"></i>
                                 </div>
-                                <small class="text-muted">Kehadiran Wajib (bulan ini)</small>
-                                <h3 class="mt-2 mb-0 stat-number">
-                                    @if(isset($attendanceStats['percent']))
-                                        {{ $attendanceStats['present'] }}/{{ $attendanceStats['total'] }} ({{ $attendanceStats['percent'] }}%)
-                                    @else
-                                        -
-                                    @endif
-                                </h3>
+                                <small class="text-muted">Komplain Selesai</small>
+                                <h3 class="mt-2 mb-0 stat-number">{{ (int)($complaintsCount ?? 0) }}</h3>
                             </div>
                         </div>
                     </div>
@@ -1000,10 +1005,98 @@
                         </div>
                     </div>
                 </div>
+
+                @php($isSenior = auth()->user()->role && strcasecmp(auth()->user()->role->nama_role, 'Senior') === 0)
+                @if(!$isSenior)
+                    <div class="card mt-3 history-card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-flag-fill text-danger me-2"></i>
+                                Riwayat Komplain (Selesai)
+                            </h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table mb-0 custom-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Judul</th>
+                                            <th>Tanggal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse(($complaintsHistory ?? collect()) as $rc)
+                                            <tr>
+                                                <td>{{ $rc->judul }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($rc->created_at)->format('d/m/Y H:i') }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="2" class="text-center text-muted">Belum ada komplain selesai</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                @endif
                 @endif
                 </div>
             </div>
         </div>
+        @if($isSenior)
+        <div class="tab-pane fade" id="tab-komplain" role="tabpanel" aria-labelledby="tab-komplain-tab">
+            <div class="tab-content-wrapper">
+                <div class="card mt-1 history-card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-flag-fill text-danger me-2"></i>
+                            Riwayat Komplain (Selesai)
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table mb-0 custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Judul</th>
+                                        <th>Ringkasan</th>
+                                        <th>Tanggal</th>
+                                        <th class="text-end">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse(($complaintsHistory ?? collect()) as $rc)
+                                        <tr>
+                                            <td>{{ $rc->judul }}</td>
+                                            <td>
+                                                <details>
+                                                    <summary>Lihat ringkasan</summary>
+                                                    <div class="small text-muted mt-1">{{ \Illuminate\Support\Str::limit($rc->deskripsi, 180) }}</div>
+                                                    @if($rc->follow_up)
+                                                        <div class="small text-success mt-1">Tindak Lanjut: {{ \Illuminate\Support\Str::limit($rc->follow_up, 180) }}</div>
+                                                    @endif
+                                                </details>
+                                            </td>
+                                            <td>{{ \Carbon\Carbon::parse($rc->created_at)->format('d/m/Y H:i') }}</td>
+                                            <td class="text-end">
+                                                <a href="{{ route('complaints.index') }}" class="btn btn-sm btn-outline-primary">Lihat Semua</a>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">Belum ada komplain selesai</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
     @endif
 
 </x-app-layout>
